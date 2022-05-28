@@ -1,0 +1,27 @@
+.body{
+    margin-top: 10px;
+    margin-left: 20px;
+    margin-right: 20px;
+}
+
+.post{
+    border: solid lightgray;
+    border-width: 2px;
+    border-radius: 10px;
+
+    padding: 10px;
+    margin: 10px;
+}
+
+.post_id{
+    display: none;
+}
+
+.post textarea{
+    height: 100px;
+}
+
+div textarea{
+    width: 100%;
+}
+

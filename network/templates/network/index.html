@@ -1,0 +1,143 @@
+{% extends "network/layout.html" %}
+
+{% block script %}
+    <script>
+        document.addEventListener('click', event => {
+            const element = event.target;
+            const classes = element.className.split(' ');
+
+            if (classes.includes("edit")){
+                const post = element.parentElement;
+                const post_id = parseInt(post.querySelector('.post_id').innerHTML);
+                const post_content = post.querySelector('.post_content');
+
+                const edit = document.createElement('textarea');
+                edit.innerHTML = post_content.innerHTML;
+                edit.classList.add('edit_content');
+
+                const save = document.createElement('button');
+                save.innerHTML = "Save";
+                save.classList.add('save', 'btn', 'btn-primary', 'btn-sm');
+                
+                save.addEventListener('click', () => {
+                    fetch(`/edit/${ post_id }`, {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            content: edit.value
+                        })
+                    })
+                    .then(response => response.json())
+                    .then(result => {
+                        // Print result
+                        console.log(result);
+                    });
+
+                    const post_content = document.createElement('p');
+                    post_content.innerHTML = edit.value;
+                    post_content.classList.add('post_content');
+                    post.replaceChild(post_content, edit);
+                    post.removeChild(save);
+
+                    element.style.display = "block";
+                });
+
+                post.replaceChild(edit, post_content);
+                post.appendChild(save);
+                element.style.display = "none";
+            }
+
+            if (classes.includes("like")){
+                const post = element.parentElement;
+                const post_id = parseInt(post.querySelector('.post_id').innerHTML);
+                let likes = post.querySelector('.likes');
+
+                if (element.innerHTML === "Like"){
+                    likes.innerHTML = `${parseInt(likes.innerHTML) + 1} likes`;
+                    element.innerHTML = "Unlike";
+
+                    fetch(`/like/${ post_id }`, {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            action: "like"
+                        })
+                    })
+                    .then(response => response.json())
+                    .then(result => {
+                        // Print result
+                        console.log(result);
+                    });
+
+                } else{
+                    likes.innerHTML = `${parseInt(likes.innerHTML) - 1} likes`;
+                    element.innerHTML = "Like";
+
+                    fetch(`/like/${ post_id }`, {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            action: "unlike"
+                        })
+                    })
+                    .then(response => response.json())
+                    .then(result => {
+                        // Print result
+                        console.log(result);
+                    });
+                }
+
+            }
+        });
+    </script>
+{% endblock %}
+
+{% block body %}
+    {% if user.is_authenticated %}
+        <div class="post">
+            <h4>New Post</h4>
+            <form action="{% url 'index' %}" method="POST">
+                {% csrf_token %}
+                <textarea name="post_text" placeholder="Say Something"></textarea>
+                <br>
+                <input class="btn btn-primary" type="submit" value="Post">
+            </form>
+        </div>
+    {% endif %}
+
+    <h4>All Posts</h4>
+
+    {% for post in page_obj %}
+    <div class="post">
+        <h5><a href="{% url 'profile' post.user %}">{{ post.user }}</a></h5>
+        <p class="post_id">{{ post.id }}</p>
+        <p class="post_content">{{ post.content }}</p>
+        <p>On {{ post.created}} </p>
+        <p class="likes"> {{ post.likes.count }} likes</p>
+        {% if post.user == request.user %}
+            <button type="button" class="edit btn btn-primary btn-sm">Edit Post</button>
+        {% endif %}
+        {% if user.is_authenticated %}
+            {% if user in post.likes.all %}
+                <button type="button" class="like btn btn-primary btn-sm">Unlike</button>
+            {% else %}
+                <button type="button" class="like btn btn-primary btn-sm">Like</button>
+            {% endif %}
+        {% endif %}
+    </div>
+    {% endfor %}
+    <div class="pagination">
+        <span class="step-links">
+            {% if page_obj.has_previous %}
+                <a href="?page=1">&laquo; first</a>
+                <a href="?page={{ page_obj.previous_page_number }}">previous</a>
+            {% endif %}
+    
+            <span class="current">
+                Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.
+            </span>
+    
+            {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}">next</a>
+                <a href="?page={{ page_obj.paginator.num_pages }}">last &raquo;</a>
+            {% endif %}
+        </span>
+    </div>
+{% endblock %}
